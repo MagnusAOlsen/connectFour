@@ -1,6 +1,7 @@
 import random
 import operator
 from player import Agent, Player
+import matplotlib.pyplot as plt
 
 
 class GameBoard:
@@ -117,12 +118,8 @@ class GameBoard:
         return False
     
     def move(self, action):
-
-        if self.check_winner():
-            return self.state, 10, True, {}
-        elif not any(" " in row for row in self.state):
-            self.winner = "T"
-            return self.state, 1, True, {}
+        reward = 0
+        
         if self.state[0][action] != " ":
             return self.state, -10, False, {}  # Invalid move (column full)
 
@@ -132,18 +129,26 @@ class GameBoard:
                 break
         
         if self.opposition_three_in_row():
-            return self.state, -5, False, {}
+            reward -= 100
 
         elif self.three_in_row():
-            return self.state, 3, False, {}
+            reward += 25
+
         elif self.two_in_row():
-            return self.state, 1, False, {} 
+            reward +=  15
 
-
-        
+        if self.check_winner():
+            if self.winner == self.player:
+                return self.state, 50, True, {}
+            else:
+                return self.state, -50, True, {}
+        elif not any(" " in row for row in self.state):
+            self.winner = "T"
+            return self.state, 1, True, {}
+            
 
         self.player = "O" if self.player == "X" else "X"
-        return self.state, -0.1, False, {}
+        return self.state, reward, False, {}
 
     def check_winner(self):
         board = self.state
@@ -185,11 +190,17 @@ class GameBoard:
 def train_agent(episodes, agent1, agent2):
     env = GameBoard()
 
+    agent1_learning_rate = []
+    agent2_learning_rate = []
+    agent1_exploration_factor = []
+    agent2_exploration_factor = []
+
     for episode in range(episodes):
         state, _ = env.reset()
         done = False
         current_player = agent1 if episode % 2 == 0 else agent2
         other_player = agent2 if current_player == agent1 else agent1
+        print(f"\r{episode + 1}/{episodes} training rounds done", end="", flush=True)
 
         while not done:
             action = current_player.get_action(state)
@@ -202,8 +213,13 @@ def train_agent(episodes, agent1, agent2):
 
             state = next_state
             current_player, other_player = other_player, current_player
+        
+        agent1_learning_rate.append(agent1.alpha)
+        agent2_learning_rate.append(agent2.alpha)
+        agent1_exploration_factor.append(agent1.exploration_factor)
+        agent2_exploration_factor.append(agent2.exploration_factor)
 
-    return agent1, agent2
+    return agent1_learning_rate, agent2_learning_rate, agent1_exploration_factor, agent2_exploration_factor
 
 
 def play_human_vs_agent(agent, player):
@@ -215,8 +231,10 @@ def play_human_vs_agent(agent, player):
 
     while not done:
         if env.player == agent.tag:
+            hash_state = tuple(tuple(row) for row in state)
             action = agent.get_action(state)
-            print(f"Agent ({agent.tag}) chooses column: {action}")
+            print(action)
+            print(agent.values[hash_state])
         else:
             action = player.get_action(state)
 
@@ -234,10 +252,25 @@ if __name__ == "__main__":
     agent1 = Agent(tag="X")
     agent2 = Agent(tag="O")
     print("Playing a game with the agent...")
-    play_human_vs_agent(agent1, Player(tag="O"))
+    #play_human_vs_agent(agent1, Player(tag="O"))
     print("Training agents... please wait.")
-    train_agent(20000, agent1, agent2)
+    agent1_learning_rate, agent2_learning_rate, agent1_exploration_rate, agent2_exploration_rate = train_agent(300000, agent1, agent2)
     print("Training complete!")
+    print("Agent 1 Values:")
+    
+
+    plt.plot(agent1_learning_rate, label='Agent 1 Learning Rate')
+    plt.plot(agent2_learning_rate, label='Agent 2 Learning Rate')
+    plt.xlabel('Episodes')
+    plt.ylabel('Learning Rate')
+    plt.legend()
+    plt.show()
+    plt.plot(agent1_exploration_rate, label='Agent 1 Exploration Factor')
+    plt.plot(agent2_exploration_rate, label='Agent 2 Exploration Factor')
+    plt.xlabel('Episodes')
+    plt.ylabel('Learning Rate')
+    plt.legend()
+    plt.show()
 
     play_human_vs_agent(agent1, Player(tag="O"))
 
