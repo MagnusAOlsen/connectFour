@@ -214,10 +214,10 @@ def train_agent(episodes, agent1, agent2):
             state = next_state
             current_player, other_player = other_player, current_player
         
-        agent1_learning_rate.append(agent1.alpha)
-        agent2_learning_rate.append(agent2.alpha)
-        agent1_exploration_factor.append(agent1.exploration_factor)
-        agent2_exploration_factor.append(agent2.exploration_factor)
+        agent1_learning_rate.append(agent1.lr)
+        agent2_learning_rate.append(agent2.lr)
+        agent1_exploration_factor.append(agent1.epsilon)
+        agent2_exploration_factor.append(agent2.epsilon)
 
     return agent1_learning_rate, agent2_learning_rate, agent1_exploration_factor, agent2_exploration_factor
 
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     print("Playing a game with the agent...")
     #play_human_vs_agent(agent1, Player(tag="O"))
     print("Training agents... please wait.")
-    agent1_learning_rate, agent2_learning_rate, agent1_exploration_rate, agent2_exploration_rate = train_agent(10000, agent1, agent2)
+    agent1_learning_rate, agent2_learning_rate, agent1_exploration_rate, agent2_exploration_rate = train_agent(50000, agent1, agent2)
     print("Training complete!")
     print("Agent 1 Values:")
     
